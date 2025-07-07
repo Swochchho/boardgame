@@ -1,5 +1,7 @@
 # Tic Tac Toe Game
 
+![CI Status](https://github.com/Swochchho/boardgame/actions/workflows/main.yml/badge.svg)
+
 A simple React-based Tic Tac Toe game built with Vite. The game supports two players or lets you play against the computer (easy, medium, hard). Displays the current player's turn, and shows the winner or a draw at the end. Built using functional components and React hooks.
 
 ## Features

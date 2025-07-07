@@ -1,4 +1,5 @@
 stages:
+  - install
   - build
   - test
   - security_scan
@@ -6,17 +7,30 @@ stages:
 
 variables:
   NODE_VERSION: "18"
+  SURGE_DOMAIN: "tic-tac-toe-react-${CI_PIPELINE_ID}.surge.sh"
 
-# Use a custom Docker image with Node.js
 image: node:${NODE_VERSION}
 
-# Cache node_modules for faster builds
+# Cache configuration
 cache:
+  key: ${CI_COMMIT_REF_SLUG}
   paths:
     - node_modules/
+    - .npm/
 
 before_script:
-  - npm ci
+  - node --version
+  - npm --version
+  - npm ci --prefer-offline --no-audit
+
+install_dependencies:
+  stage: install
+  script:
+    - npm ci
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 week
 
 build:
   stage: build
@@ -30,19 +44,42 @@ build:
 test:
   stage: test
   script:
-    - npm run test || echo "No tests found"
+    - npm install --save-dev jest
+    - npm test -- --watchAll=false --coverage || echo "No tests found"
+  artifacts:
+    reports:
+      junit: junit.xml
+    paths:
+      - coverage/
+    expire_in: 1 week
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
 
 security_scan:
   stage: security_scan
   script:
+    - npm audit --production || true
     - npm install -g snyk
-    - snyk test || true  # Run Snyk but don't fail pipeline
-    - npm audit || true  # Run npm audit but don't fail pipeline
+    - if [ -n "$SNYK_TOKEN" ]; then snyk auth --auth $SNYK_TOKEN; fi
+    - snyk test --all-projects || true
+    - apt-get update && apt-get install -y default-jre
+    - wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.3.1/dependency-check-8.3.1-release.zip
+    - unzip dependency-check-8.3.1-release.zip
+    - ./dependency-check/bin/dependency-check.sh --scan . --format HTML --format JSON --out ./security-report
+  artifacts:
+    paths:
+      - security-report/
+    expire_in: 1 week
+    when: always
 
-deploy:
+deploy_to_surge:
   stage: deploy
   script:
     - npm install -g surge
-    - surge ./dist --domain your-game-name.surge.sh
+    - if [ -n "$SURGE_LOGIN" ]; then echo "$SURGE_LOGIN" > .surge_creds; fi
+    - if [ -n "$SURGE_TOKEN" ]; then echo "$SURGE_TOKEN" >> .surge_creds; fi
+    - surge --project ./dist --domain $SURGE_DOMAIN
+  environment:
+    name: production
+    url: https://$SURGE_DOMAIN
   only:
     - main
