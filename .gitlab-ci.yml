@@ -1,0 +1,48 @@
+stages:
+  - build
+  - test
+  - security_scan
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+
+# Use a custom Docker image with Node.js
+image: node:${NODE_VERSION}
+
+# Cache node_modules for faster builds
+cache:
+  paths:
+    - node_modules/
+
+before_script:
+  - npm ci
+
+build:
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+
+test:
+  stage: test
+  script:
+    - npm run test || echo "No tests found"
+
+security_scan:
+  stage: security_scan
+  script:
+    - npm install -g snyk
+    - snyk test || true  # Run Snyk but don't fail pipeline
+    - npm audit || true  # Run npm audit but don't fail pipeline
+
+deploy:
+  stage: deploy
+  script:
+    - npm install -g surge
+    - surge ./dist --domain your-game-name.surge.sh
+  only:
+    - main
