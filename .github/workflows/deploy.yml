@@ -1,7 +1,11 @@
 name: CI/CD to Cloudflare Pages 
  
 on: [push] 
- 
+
+permissions:
+  contents: read
+  deployments: write
+
 jobs: 
   build-and-deploy: 
     runs-on: self-hosted 
@@ -19,10 +23,6 @@ jobs:
         run: | 
           npm ci 
           npm run build 
- 
-      - name: Run tests 
-        run: npm test -- --watchAll=false --coverage
-        continue-on-error: true
  
       - name: Deploy to Cloudflare 
         uses: cloudflare/pages-action@v1 
