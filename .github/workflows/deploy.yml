@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build-and-deploy:
-    runs-on: [self-hosted, boardgame-runner]
+    runs-on: self-hosted
 
     steps:
       - uses: actions/checkout@v4
