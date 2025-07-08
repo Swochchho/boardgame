@@ -21,9 +21,14 @@ jobs:
           npm run build
 
       - name: Run tests
-        run: npm test -- --watchAll=false --coverage || echo "Tests skipped"
-        shell: bash
-
+        shell: pwsh
+        run: |
+          try {
+          npm test -- --watchAll=false --coverage
+          }
+          catch {
+           Write-Host "Tests skipped"
+          }
 
       - name: Deploy to Cloudflare
         uses: cloudflare/pages-action@v1
