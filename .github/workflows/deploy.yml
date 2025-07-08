@@ -1,9 +1,11 @@
 name: CI/CD to Cloudflare Pages
+
 on: [push]
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, boardgame-runner]
+
     steps:
       - uses: actions/checkout@v4
 
@@ -11,7 +13,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install and build
         run: |
@@ -28,4 +30,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: "boardgame"
           directory: "dist"
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}  # Optional but helpful
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
